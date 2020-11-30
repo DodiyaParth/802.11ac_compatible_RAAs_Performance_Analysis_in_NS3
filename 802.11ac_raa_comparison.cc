@@ -46,66 +46,69 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
 
+// This structure stores global variables, which are needed to calculate throughput and delay every second
 struct DataForThpt
 {
-  FlowMonitorHelper flowmon;
+  FlowMonitorHelper flowmon;	
   Ptr<FlowMonitor> monitor;
-  uint64_t old;
-  double lastDelaySum;
-  uint32_t lastRxPackets;
-}data;
+  uint64_t lastTotalRxBytes;	//Total bytes received in all flows before the starting of current window.				
+  double lastDelaySum;			//Total Delay sum in all flows before the starting of current window.
+  uint32_t lastRxPackets;		//Total number of received packets in all flows before starting the current window.
+}data;							//data is a structure variable which will store all these global variables.
 
-double averageDelay;
+double averageDelay;			
 std::ofstream delayStream;
 std::ofstream throughputStream;
 
+//This function is being called every 0.2 seconds, It measures delay and throughput in every 0.2s time window.
+//It calculates overall throughput in that window of all flows in the network.
 static void
 Throughput ()
 {
+  
+	data.monitor->CheckForLostPackets ();
+	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (data.flowmon.GetClassifier ());
+	std::map<FlowId, FlowMonitor::FlowStats> stats = data.monitor->GetFlowStats ();
 
-  data.monitor->CheckForLostPackets ();
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (data.flowmon.GetClassifier ());
-  std::map<FlowId, FlowMonitor::FlowStats> stats = data.monitor->GetFlowStats ();
+	uint64_t total_bytes=0;
+	uint32_t total_RxPackets=0;
+	double total_DelaySum=0;
 
-  uint64_t total_bytes=0;
-  uint32_t total_RxPackets=0;
-  double total_DelaySum=0;
+	//Iterating through every flow
+	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter = stats.begin (); iter != stats.end (); ++iter)
+	{
 
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter = stats.begin (); iter != stats.end (); ++iter)
-    {
+		total_bytes+=iter->second.rxBytes;
+		total_DelaySum+=iter->second.delaySum.GetDouble();
+		total_RxPackets+=iter->second.rxPackets;
+	}
+	uint64_t dataInLastSecond=total_bytes-data.lastTotalRxBytes;
+	uint32_t RxPacketsInLastSecond=total_RxPackets-data.lastRxPackets;
+	double DelaySumInLastSecond=total_DelaySum-data.lastDelaySum;
 
-      total_bytes+=iter->second.rxBytes;
-      total_DelaySum+=iter->second.delaySum.GetDouble();
-      total_RxPackets+=iter->second.rxPackets;
-    }
-  uint64_t dataInLastSecond=total_bytes-data.old;
-    uint32_t RxPacketsInLastSecond=total_RxPackets-data.lastRxPackets;
-    double DelaySumInLastSecond=total_DelaySum-data.lastDelaySum;
+	data.lastTotalRxBytes=total_bytes;
+	data.lastDelaySum=total_DelaySum;
+	data.lastRxPackets=total_RxPackets;
+	
+	if(total_RxPackets!=0)
+	{
+		averageDelay=(total_DelaySum/1000000)/total_RxPackets;
+	}
 
-    data.old=total_bytes;
-    data.lastDelaySum=total_DelaySum;
-    data.lastRxPackets=total_RxPackets;
-    if(total_RxPackets!=0)
-    {
-      averageDelay=(total_DelaySum/1000000)/total_RxPackets;
-    }
+	if(!(RxPacketsInLastSecond==0 || DelaySumInLastSecond==0))
+	{
+		NS_LOG_UNCOND("Delay "<<(DelaySumInLastSecond/RxPacketsInLastSecond)/(1000000)<<"ms");
+		delayStream<<(DelaySumInLastSecond/RxPacketsInLastSecond)/(1000000)<<std::endl;
+	}
+	else
+	{
+		NS_LOG_UNCOND("Delay "<<0<<"ms");
+		delayStream<<0<<std::endl;
+	}
+	NS_LOG_UNCOND("Throughput "<<(dataInLastSecond*8.0*5)/(1024*1024)<<"Mbps");
+	throughputStream<<(dataInLastSecond*8.0*5)/(1024*1024)<<std::endl;
 
-    if(!(RxPacketsInLastSecond==0 || DelaySumInLastSecond==0))
-    {
-      NS_LOG_UNCOND("Delay "<<(DelaySumInLastSecond/RxPacketsInLastSecond)/(1000000)<<"ms");
-      delayStream<<(DelaySumInLastSecond/RxPacketsInLastSecond)/(1000000)<<std::endl;
-    }
-    else
-    {
-      NS_LOG_UNCOND("Delay "<<0<<"ms");
-      delayStream<<0<<std::endl;
-    }
-    NS_LOG_UNCOND("Throughput "<<(dataInLastSecond*8.0*5)/(1024*1024)<<"Mbps");
-    throughputStream<<(dataInLastSecond*8.0*5)/(1024*1024)<<std::endl;
-
-
-
-Simulator::Schedule (Seconds (0.2), &Throughput);
+	Simulator::Schedule (Seconds (0.2), &Throughput);
 }
 
 int 
@@ -278,8 +281,9 @@ main (int argc, char *argv[])
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
+  //Initialisation of global variable which are used for Throughput and Delay Calculation.
   data.monitor=data.flowmon.InstallAll();
-  data.old=0;
+  data.lastTotalRxBytes=0;
   data.lastRxPackets=0;
   data.lastDelaySum=0;
   Simulator::Schedule (Seconds (1.0), &Throughput);
