@@ -112,18 +112,28 @@ int
 main (int argc, char *argv[])
 {
   bool verbose = true;
+  //Number of CSMA(LAN) nodes
   uint32_t nCsma = 3;
+
+  //Number of STA(Stations)
   uint32_t nWifi = 3;
+
   bool tracing = false;
   uint32_t maxBytes = 0;
+
+  //Error Model -> Default = NistErrorRateModel
   std::string errorModelType = "ns3::NistErrorRateModel";
+
+  //RAA algorithm (WifiManager Class) -> Default = MinstrelHt
   std::string raaAlgo = "MinstrelHt";
+
+  //Variables to set rates of various channels in topology, Refer base topology structure.
   uint32_t csmaRate=150;
   uint32_t csmaDelay=9000;
   uint32_t p2pRate=50;
   uint32_t p2pDelay=10;
   
-
+//Command-Line argument to make it interactive.
   CommandLine cmd (__FILE__);
   cmd.AddValue ("nCsma", "Number of \"extra\" CSMA nodes/devices", nCsma);
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
@@ -141,6 +151,8 @@ main (int argc, char *argv[])
 
   std::string raa_name=raaAlgo;
   raaAlgo = "ns3::"+raaAlgo+"WifiManager";
+
+//Store values of Throughput and delay in respective files for plotting graph
   delayStream.open("Delay_"+raa_name+"_"+std::to_string(nWifi)+".csv");
   throughputStream.open("Throughput_"+raa_name+"_"+std::to_string(nWifi)+".csv");
 
@@ -181,18 +193,26 @@ main (int argc, char *argv[])
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   
-  //Delay model and Loss Model
+  //Delay model
   channel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+
+  //Loss model
   channel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel",
                                   "Exponent", DoubleValue (0.3),
                                   "ReferenceLoss", DoubleValue (4.0));
 
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
   phy.SetChannel (channel.Create ());
+
+  //Error Model
   phy.SetErrorRateModel (errorModelType);
 
   WifiHelper wifi;
+
+  //Setting Wifi Standard
   wifi.SetStandard (WIFI_STANDARD_80211ac);
+
+  //Setting Raa Algorithm
   wifi.SetRemoteStationManager (raaAlgo);
 
   WifiMacHelper mac;
@@ -220,11 +240,14 @@ main (int argc, char *argv[])
                                  "GridWidth", UintegerValue (3),
                                  "LayoutType", StringValue ("RowFirst"));
   
+
+  //Bounds for the Rectangle Grid
   mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", "Speed", 
                             StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
                              "Bounds", RectangleValue (Rectangle (-100, 100, -100, 100)));
   mobility.Install (wifiStaNodes);
 
+//Setting Mobility model
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
 
@@ -249,11 +272,13 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("Create Applications.");
 
-// Create a BulkSendApplication and install it on node 0
-//
-  uint16_t port = 9;  // well-known echo port number
+// Creating a BulkSendApplication and install it on one of the wifi-nodes(except AP)
+
+  uint16_t port = 8808  // random port for TCP server listening.
   
-   uint32_t packetSize = 1024;
+
+  //Setting packetsize (Bytes)
+  uint32_t packetSize = 1024;
   BulkSendHelper source ("ns3::TcpSocketFactory",
                          InetSocketAddress (csmaInterfaces.GetAddress (nCsma), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
@@ -267,9 +292,8 @@ main (int argc, char *argv[])
   sourceApps.Start (Seconds (2.0));
   sourceApps.Stop (Seconds (6.0));
 
-//
-// Create a PacketSinkApplication and install it on node 1
-//
+// Creating a PacketSinkApplication and install it on one of the CSMA nodes
+
   PacketSinkHelper sink ("ns3::TcpSocketFactory",
                          InetSocketAddress (csmaInterfaces.GetAddress(nCsma), port));
   ApplicationContainer sinkApps = sink.Install (csmaNodes.Get (nCsma));
