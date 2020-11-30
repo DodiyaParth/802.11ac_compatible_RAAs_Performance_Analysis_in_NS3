@@ -1,3 +1,7 @@
+# Comparison of Rate Adaptation Algorithms Compatible with IEEE 802.11ac implemented in NS-3
+
+To see Details of this experiment, checkout [wiki](https://github.com/DodiyaParth/802.11ac_compatible_RAAs_Performance_Analysis_in_NS3/wiki)
+
 **Steps to Reproduce Results**
 
 1) Copy the file "802.11ac_raa_comparision.cc" into /scratch from Ns3 root directory.
