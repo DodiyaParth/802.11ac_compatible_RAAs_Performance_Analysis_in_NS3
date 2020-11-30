@@ -21,7 +21,7 @@
    b) Throughput_"raa_name"_"nWifi".csv -> Records Throughput per second
    
    
-5) IEEE Standard, Delay Model, Loss Model, Error Model can changed according in the file.
+5) IEEE Standard, Delay Model, Loss Model, Error Model can changed accordingly in the file.
 
 
 
