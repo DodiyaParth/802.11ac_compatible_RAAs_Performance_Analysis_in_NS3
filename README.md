@@ -2,7 +2,7 @@
 2) Run ./waf --run "802.11ac_raa_comparision" to build and run the file.
 3) Command line options, example, ./waf --run "802.11ac_raa_comparision -raa=Ideal"
 
-**Relevant Options available  **         
+**Relevant Options available**         
 
   nCsma                         ->                                      Number of CSMA nodes
   
