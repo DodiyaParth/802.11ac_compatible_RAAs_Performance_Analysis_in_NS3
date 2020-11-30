@@ -33,12 +33,12 @@
 
 
 
-#For any query, contact,
+# For any query, contact,
 
 -> Dhruv Agja - dhruvagja8808@gmail.com
 
 -> Parth Dodiya - parthdodiya999@gmail.com
 
--> Avdesh Yadav - 
+-> Avdesh Yadav - avdheshyadavdow@gmail.com
 
 
