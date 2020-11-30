@@ -15,8 +15,11 @@
   For other options refer the main file.
   
 4) Running the file will generate two output files,
+
    a) Delay_"raa_name"_"nWifi".csv -> Records Delay per second
+   
    b) Throughput_"raa_name"_"nWifi".csv -> Records Throughput per second
+   
    
 5) IEEE Standard, Delay Model, Loss Model, Error Model can changed according in the file.
 
