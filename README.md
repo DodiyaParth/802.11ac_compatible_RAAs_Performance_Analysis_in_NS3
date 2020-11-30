@@ -37,7 +37,7 @@
 
 -> Dhruv Agja - dhruvagja8808@gmail.com
 
--> Parth Dodiya - 
+-> Parth Dodiya - parthdodiya999@gmail.com
 
 -> Avdesh Yadav - 
 
